@@ -2,6 +2,7 @@
 import { ArrowRight, Clock, Heart, Users, Coffee, Cat } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { CAFE_INFO } from '../data/cafeData';
 
 const Home = () => {
   return (
@@ -14,7 +15,7 @@ const Home = () => {
             <h1 className="text-4xl md:text-6xl font-bold text-primary mb-6 font-serif">
               Welcome to<br />
               <span className="text-5xl md:text-7xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Purrfect Brew
+                {CAFE_INFO.name}
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -47,7 +48,7 @@ const Home = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-slide-up">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6 font-serif">
-                About Purrfect Brew
+                About {CAFE_INFO.name}
               </h2>
               <p className="text-lg text-foreground/80 mb-6 leading-relaxed">
                 Our cozy cat café combines the love of premium coffee with the joy of feline companionship. 
@@ -97,21 +98,18 @@ const Home = () => {
               Visit Us Anytime
             </h2>
             <div className="bg-background rounded-2xl p-8 shadow-lg hover-lift max-w-2xl mx-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
-                <div>
-                  <h3 className="font-semibold text-lg text-primary mb-3 font-serif">Weekdays</h3>
-                  <div className="space-y-2 text-foreground/80">
-                    <p>Monday - Friday</p>
-                    <p className="font-medium text-lg">7:00 AM - 8:00 PM</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
+                {Object.entries(CAFE_INFO.hours).map(([day, hours]) => (
+                  <div key={day}>
+                    <h3 className="font-semibold text-lg text-primary mb-3 font-serif">
+                      {day.includes('-') ? 'Weekdays' : day}
+                    </h3>
+                    <div className="space-y-2 text-foreground/80">
+                      <p>{day}</p>
+                      <p className="font-medium text-lg">{hours}</p>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-primary mb-3 font-serif">Weekends</h3>
-                  <div className="space-y-2 text-foreground/80">
-                    <p>Saturday: 8:00 AM - 9:00 PM</p>
-                    <p>Sunday: 8:00 AM - 7:00 PM</p>
-                  </div>
-                </div>
+                ))}
               </div>
               <div className="mt-6 pt-6 border-t border-border">
                 <p className="text-sm text-foreground/60">

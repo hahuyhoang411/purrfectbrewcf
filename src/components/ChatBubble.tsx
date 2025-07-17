@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Bot } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, Key } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { useCafeContext } from '../hooks/useCafeContext';
 
 interface Message {
   id: string;
@@ -10,156 +11,15 @@ interface Message {
 }
 
 interface ChatBubbleProps {
-  apiKey?: string;
-  cafeInfo?: CafeInfo;
+  // No props needed - we'll get API key from Supabase and context from hook
 }
 
-interface CafeInfo {
-  name: string;
-  address: string;
-  hours: Record<string, string>;
-  menu: Array<{
-    category: string;
-    items: Array<{
-      name: string;
-      description: string;
-      price: string;
-    }>;
-  }>;
-  cats: Array<{
-    name: string;
-    breed: string;
-    personality: string;
-    funFact: string;
-    adoptable: boolean;
-  }>;
-  rules: string[];
-  promotions?: string[];
-}
-
-const DEFAULT_CAFE_INFO: CafeInfo = {
-  name: "Purrfect Brew",
-  address: "123 Cat Street, Coffee City, CC 12345",
-  hours: {
-    "Monday - Friday": "7:00 AM - 8:00 PM",
-    "Saturday": "8:00 AM - 9:00 PM",
-    "Sunday": "8:00 AM - 7:00 PM"
-  },
-  menu: [
-    {
-      category: "Coffee & Espresso",
-      items: [
-        { name: "Purrfect Espresso", description: "Rich, smooth espresso shot", price: "$3.50" },
-        { name: "Whiskers Cappuccino", description: "Creamy cappuccino with cat latte art", price: "$4.75" },
-        { name: "Tabby Latte", description: "Smooth latte with your choice of milk", price: "$5.25" },
-        { name: "Calico Cold Brew", description: "Smooth cold brew served over ice", price: "$4.50" },
-        { name: "Maine Coon Mocha", description: "Rich chocolate and espresso blend", price: "$5.75" },
-        { name: "Siamese Macchiato", description: "Espresso marked with steamed milk foam", price: "$4.95" }
-      ]
-    },
-    {
-      category: "Specialty Drinks",
-      items: [
-        { name: "Catnip Chai Latte", description: "Spiced chai with steamed milk and honey", price: "$5.50" },
-        { name: "Persian Hot Chocolate", description: "Rich cocoa with whipped cream", price: "$4.75" },
-        { name: "Bengal Matcha Latte", description: "Premium matcha with steamed milk", price: "$5.95" },
-        { name: "Ragdoll Turmeric Latte", description: "Golden turmeric with warming spices", price: "$5.25" }
-      ]
-    },
-    {
-      category: "Fresh Pastries",
-      items: [
-        { name: "Paw Print Croissant", description: "Buttery croissant with almond filling", price: "$4.25" },
-        { name: "Kitty Cat Scone", description: "Blueberry scone with clotted cream", price: "$3.95" },
-        { name: "Tuna Melt Sandwich", description: "Grilled sandwich with premium tuna", price: "$8.50" },
-        { name: "Salmon Bagel", description: "Everything bagel with cream cheese and salmon", price: "$9.75" }
-      ]
-    },
-    {
-      category: "Sweet Treats",
-      items: [
-        { name: "Whisker Cookies", description: "Cat-shaped sugar cookies (pack of 3)", price: "$4.50" },
-        { name: "Purrfect Cheesecake", description: "Creamy cheesecake with berry compote", price: "$6.75" },
-        { name: "Tabby Tiramisu", description: "Classic tiramisu with coffee essence", price: "$7.25" }
-      ]
-    }
-  ],
-  cats: [
-    {
-      name: "Luna",
-      breed: "Grey Tabby",
-      personality: "Playful and curious",
-      funFact: "Loves to play with feather toys and purrs when you read to her",
-      adoptable: true
-    },
-    {
-      name: "Mochi",
-      breed: "Orange Tabby", 
-      personality: "Laid-back and affectionate",
-      funFact: "Resident greeter who welcomes every customer with head bumps",
-      adoptable: false
-    },
-    {
-      name: "Shadow",
-      breed: "Black Shorthair",
-      personality: "Mysterious and gentle", 
-      funFact: "Appears wherever there's a sunny spot and loves afternoon naps",
-      adoptable: true
-    },
-    {
-      name: "Biscuit",
-      breed: "Calico",
-      personality: "Energetic and social",
-      funFact: "Loves to 'help' customers work on their laptops by walking across keyboards",
-      adoptable: true
-    },
-    {
-      name: "Sage",
-      breed: "Russian Blue",
-      personality: "Wise and calm",
-      funFact: "Senior cat who gives the best cuddles and supervises the younger cats",
-      adoptable: true
-    },
-    {
-      name: "Pepper",
-      breed: "Tuxedo",
-      personality: "Dignified and playful",
-      funFact: "Wears his black and white coat like a formal tuxedo and sits like a proper gentleman",
-      adoptable: true
-    }
-  ],
-  rules: [
-    "Please let cats approach you first - no grabbing or chasing",
-    "Don't feed the cats human food (they have special diets!)",
-    "Wash hands before and after interacting with cats",
-    "Children under 12 must be supervised by adults",
-    "Please keep voices low to maintain a relaxing atmosphere",
-    "No flash photography - it startles our feline friends",
-    "If a cat is sleeping, please don't disturb them"
-  ],
-  promotions: [
-    "Happy Hour: 20% off all drinks Monday-Friday 3-5 PM",
-    "Cat Adoption Special: Free coffee for a month when you adopt one of our cats",
-    "Student Discount: 15% off with valid student ID"
-  ]
-};
-
-const createSystemPrompt = (cafeInfo: CafeInfo): string => {
-  const menuText = cafeInfo.menu.map(category => 
-    `${category.category}:\n${category.items.map(item => 
-      `- ${item.name}: ${item.description} (${item.price})`
-    ).join('\n')}`
-  ).join('\n\n');
-
-  const catsText = cafeInfo.cats.map(cat => 
-    `${cat.name} (${cat.breed}): ${cat.personality}. ${cat.funFact} ${cat.adoptable ? '- Available for adoption!' : '- Permanent resident'}`
-  ).join('\n');
-
-  const hoursText = Object.entries(cafeInfo.hours).map(([day, hours]) => 
-    `${day}: ${hours}`
-  ).join('\n');
-
-  return `You are the friendly AI assistant for ${cafeInfo.name}, a cozy cat café. You have a warm, welcoming personality like a knowledgeable barista who adores cats. Your responses should be helpful, playful, and always cat-themed when appropriate.
+/**
+ * Creates a dynamic system prompt using live café data
+ * This ensures the chatbot always has current information
+ */
+const createSystemPrompt = (contextString: string, cafeName: string): string => {
+  return `You are the friendly AI assistant for ${cafeName}, a cozy cat café. You have a warm, welcoming personality like a knowledgeable barista who adores cats. Your responses should be helpful, playful, and always cat-themed when appropriate.
 
 IMPORTANT BEHAVIORAL RULES:
 - Only respond based on the café information provided below
@@ -169,38 +29,14 @@ IMPORTANT BEHAVIORAL RULES:
 - If you don't have specific information, say "I'm still learning more about the café. Would you like to check our menu or meet our cats?"
 
 CAFÉ INFORMATION:
-
-📍 Location & Hours:
-${cafeInfo.name}
-${cafeInfo.address}
-${hoursText}
-*Last orders 30 minutes before closing
-
-🍽️ Our Menu:
-${menuText}
-
-We offer dairy-free milk alternatives (oat, almond, soy) and gluten-free pastries.
-
-🐱 Our Cats:
-${catsText}
-
-📋 House Rules:
-${cafeInfo.rules.map(rule => `- ${rule}`).join('\n')}
-
-💰 Current Promotions:
-${cafeInfo.promotions?.map(promo => `- ${promo}`).join('\n') || 'No current promotions'}
-
-📞 Contact Info:
-- Adoptions: adoptions@purrfectbrew.com
-- Phone: (555) 123-PURR
+${contextString}
 
 Remember: Be helpful about our café, menu, cats, and services. For anything else, gently redirect with cat-themed humor back to café topics!`;
 };
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ 
-  apiKey, 
-  cafeInfo = DEFAULT_CAFE_INFO 
-}) => {
+const ChatBubble: React.FC<ChatBubbleProps> = () => {
+  // Get dynamic café context from our centralized data
+  const { cafeInfo, generateContextString } = useCafeContext();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -208,18 +44,30 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [genAI, setGenAI] = useState<GoogleGenAI | null>(null);
   const [userApiKey, setUserApiKey] = useState('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Initialize AI with API key from environment or user input
   useEffect(() => {
-    if (apiKey && !genAI) {
+    // In production, you'd get this from Supabase secrets
+    // For development, we'll allow user input
+    const tryInitializeAI = (key: string) => {
       try {
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: key });
         setGenAI(ai);
+        setShowApiKeyInput(false);
       } catch (error) {
         console.error('Failed to initialize Gemini AI:', error);
+        setShowApiKeyInput(true);
       }
+    };
+
+    // Check if we have an API key in environment (Supabase secret)
+    // For now, show the API key input - in production this would be automatic
+    if (!genAI) {
+      setShowApiKeyInput(true);
     }
-  }, [apiKey, genAI]);
+  }, [genAI]);
 
   useEffect(() => {
     scrollToBottom();
@@ -256,7 +104,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     setIsTyping(true);
 
     try {
-      const systemPrompt = createSystemPrompt(cafeInfo);
+      // Generate dynamic context from current café data
+      const contextString = generateContextString();
+      const systemPrompt = createSystemPrompt(contextString, cafeInfo.name);
       
       const response = await genAI.models.generateContent({
         model: "gemini-2.5-flash",
@@ -324,7 +174,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:scale-110 transition-all duration-300 z-50 animate-bounce"
+        className="fixed bottom-6 right-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:scale-110 transition-all duration-300 z-50 animate-slow-bounce"
         aria-label="Open chat"
       >
         <MessageCircle className="h-6 w-6" />
@@ -352,9 +202,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
       </div>
 
       {/* API Key Input (if needed) */}
-      {!genAI && (
+      {showApiKeyInput && (
         <div className="p-4 bg-accent/50 border-b border-border">
-          <p className="text-sm text-foreground/80 mb-2">Enter your Gemini API key to start chatting:</p>
+          <div className="flex items-center space-x-2 mb-2">
+            <Key className="h-4 w-4 text-primary" />
+            <p className="text-sm text-foreground/80">API key required to start chatting</p>
+          </div>
+          <p className="text-xs text-foreground/60 mb-3">
+            💡 <strong>For café owners:</strong> In production, store your Gemini API key securely in Supabase secrets to avoid showing this prompt to customers.
+          </p>
           <div className="flex space-x-2">
             <input
               type="password"
@@ -367,7 +223,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
               onClick={handleApiKeySubmit}
               className="px-3 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors"
             >
-              Set
+              Start
             </button>
           </div>
         </div>

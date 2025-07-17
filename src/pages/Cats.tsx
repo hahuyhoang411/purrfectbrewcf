@@ -1,76 +1,11 @@
 
 import { Heart, Calendar, Star, Home } from 'lucide-react';
 import Layout from '../components/Layout';
+import { CATS, CAFE_INFO } from '../data/cafeData';
 
 const Cats = () => {
-  const cats = [
-    {
-      id: 1,
-      name: 'Luna',
-      image: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=400&h=400&fit=crop',
-      age: '2 years',
-      breed: 'Grey Tabby',
-      personality: 'Playful and curious',
-      funFact: 'Loves to play with feather toys and purrs when you read to her',
-      adoptable: true,
-      color: 'from-blue-100 to-purple-100'
-    },
-    {
-      id: 2,
-      name: 'Mochi',
-      image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=400&fit=crop',
-      age: '4 years',
-      breed: 'Orange Tabby',
-      personality: 'Laid-back and affectionate',
-      funFact: 'Resident greeter who welcomes every customer with head bumps',
-      adoptable: false,
-      color: 'from-orange-100 to-yellow-100'
-    },
-    {
-      id: 3,
-      name: 'Shadow',
-      image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=400&fit=crop',
-      age: '3 years',
-      breed: 'Black Shorthair',
-      personality: 'Mysterious and gentle',
-      funFact: 'Appears wherever there\'s a sunny spot and loves afternoon naps',
-      adoptable: true,
-      color: 'from-gray-100 to-slate-100'
-    },
-    {
-      id: 4,
-      name: 'Biscuit',
-      image: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=400&h=400&fit=crop',
-      age: '1 year',
-      breed: 'Calico',
-      personality: 'Energetic and social',
-      funFact: 'Loves to "help" customers work on their laptops by walking across keyboards',
-      adoptable: true,
-      color: 'from-pink-100 to-rose-100'
-    },
-    {
-      id: 5,
-      name: 'Sage',
-      image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=400&fit=crop',
-      age: '5 years',
-      breed: 'Russian Blue',
-      personality: 'Wise and calm',
-      funFact: 'Senior cat who gives the best cuddles and supervises the younger cats',
-      adoptable: true,
-      color: 'from-teal-100 to-cyan-100'
-    },
-    {
-      id: 6,
-      name: 'Pepper',
-      image: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=400&h=400&fit=crop',
-      age: '2 years',
-      breed: 'Tuxedo',
-      personality: 'Dignified and playful',
-      funFact: 'Wears his black and white coat like a formal tuxedo and sits like a proper gentleman',
-      adoptable: true,
-      color: 'from-indigo-100 to-blue-100'
-    }
-  ];
+  // Use centralized cat data  
+  const cats = CATS;
 
   return (
     <Layout>
@@ -182,10 +117,10 @@ const Cats = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <div className="bg-secondary text-secondary-foreground px-6 py-3 rounded-full">
-                📧 adoptions@purrfectbrew.com
+                📧 {CAFE_INFO.email}
               </div>
               <div className="bg-secondary text-secondary-foreground px-6 py-3 rounded-full">
-                📞 (555) 123-PURR
+                📞 {CAFE_INFO.phone}
               </div>
             </div>
           </div>

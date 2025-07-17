@@ -1,58 +1,24 @@
 
 import { Coffee, Croissant, Cookie, Sparkles } from 'lucide-react';
 import Layout from '../components/Layout';
+import { MENU_CATEGORIES, DIETARY_OPTIONS } from '../data/cafeData';
 
 const Menu = () => {
-  const menuCategories = [
-    {
-      title: 'Coffee & Espresso',
-      icon: Coffee,
-      items: [
-        { name: 'Purrfect Espresso', description: 'Rich, smooth espresso shot', price: '$3.50' },
-        { name: 'Whiskers Cappuccino', description: 'Creamy cappuccino with cat latte art', price: '$4.75' },
-        { name: 'Tabby Latte', description: 'Smooth latte with your choice of milk', price: '$5.25' },
-        { name: 'Calico Cold Brew', description: 'Smooth cold brew served over ice', price: '$4.50' },
-        { name: 'Maine Coon Mocha', description: 'Rich chocolate and espresso blend', price: '$5.75' },
-        { name: 'Siamese Macchiato', description: 'Espresso marked with steamed milk foam', price: '$4.95' },
-      ]
-    },
-    {
-      title: 'Specialty Drinks',
-      icon: Sparkles,
-      items: [
-        { name: 'Catnip Chai Latte', description: 'Spiced chai with steamed milk and honey', price: '$5.50' },
-        { name: 'Persian Hot Chocolate', description: 'Rich cocoa with whipped cream', price: '$4.75' },
-        { name: 'Bengal Matcha Latte', description: 'Premium matcha with steamed milk', price: '$5.95' },
-        { name: 'Ragdoll Turmeric Latte', description: 'Golden turmeric with warming spices', price: '$5.25' },
-        { name: 'Manx Mint Tea', description: 'Refreshing peppermint herbal tea', price: '$3.75' },
-        { name: 'Scottish Fold Earl Grey', description: 'Classic Earl Grey with bergamot', price: '$3.95' },
-      ]
-    },
-    {
-      title: 'Fresh Pastries',
-      icon: Croissant,
-      items: [
-        { name: 'Paw Print Croissant', description: 'Buttery croissant with almond filling', price: '$4.25' },
-        { name: 'Kitty Cat Scone', description: 'Blueberry scone with clotted cream', price: '$3.95' },
-        { name: 'Tuna Melt Sandwich', description: 'Grilled sandwich with premium tuna', price: '$8.50' },
-        { name: 'Salmon Bagel', description: 'Everything bagel with cream cheese and salmon', price: '$9.75' },
-        { name: 'Cat Grass Salad', description: 'Fresh greens with herb vinaigrette', price: '$7.50' },
-        { name: 'Meow Mix Wrap', description: 'Veggie wrap with hummus and sprouts', price: '$6.95' },
-      ]
-    },
-    {
-      title: 'Sweet Treats',
-      icon: Cookie,
-      items: [
-        { name: 'Whisker Cookies', description: 'Cat-shaped sugar cookies (pack of 3)', price: '$4.50' },
-        { name: 'Purrfect Cheesecake', description: 'Creamy cheesecake with berry compote', price: '$6.75' },
-        { name: 'Tabby Tiramisu', description: 'Classic tiramisu with coffee essence', price: '$7.25' },
-        { name: 'Cat Cupcake', description: 'Vanilla cupcake with cream cheese frosting', price: '$4.95' },
-        { name: 'Feline Fudge Brownie', description: 'Rich chocolate brownie with walnuts', price: '$5.50' },
-        { name: 'Purr-fait Parfait', description: 'Yogurt parfait with granola and berries', price: '$6.25' },
-      ]
-    }
-  ];
+  // Use centralized menu data with icon mapping
+  const menuCategories = MENU_CATEGORIES.map(categoryData => {
+    const iconMap: Record<string, any> = {
+      'Coffee & Espresso': Coffee,
+      'Specialty Drinks': Sparkles,
+      'Fresh Pastries': Croissant,
+      'Sweet Treats': Cookie,
+    };
+    
+    return {
+      title: categoryData.category,
+      icon: iconMap[categoryData.category] || Coffee,
+      items: categoryData.items
+    };
+  });
 
   return (
     <Layout>
@@ -120,22 +86,14 @@ const Menu = () => {
               Special Dietary Options
             </h3>
             <p className="text-foreground/80 mb-6 leading-relaxed">
-              We offer dairy-free milk alternatives (oat, almond, soy) and gluten-free pastries. 
-              Our cats are also on special diets - please don't feed them human food!
+              {DIETARY_OPTIONS.join(', ')}. Our cats are also on special diets - please don't feed them human food!
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
-                Vegan Options
-              </span>
-              <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
-                Gluten-Free
-              </span>
-              <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
-                Dairy-Free
-              </span>
-              <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
-                Sugar-Free
-              </span>
+              {['Vegan Options', 'Gluten-Free', 'Dairy-Free', 'Sugar-Free'].map(option => (
+                <span key={option} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
+                  {option}
+                </span>
+              ))}
             </div>
           </div>
         </div>
