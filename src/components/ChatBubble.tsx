@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Bot, Key } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { MessageCircle, Send, X, Bot } from 'lucide-react';
 import { useCafeContext } from '../hooks/useCafeContext';
+import { supabase } from '../integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -11,7 +11,7 @@ interface Message {
 }
 
 interface ChatBubbleProps {
-  // No props needed - we'll get API key from Supabase and context from hook
+  // No props needed - we'll get context from hook and API key from edge function
 }
 
 /**
@@ -42,32 +42,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [genAI, setGenAI] = useState<GoogleGenAI | null>(null);
-  const [userApiKey, setUserApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Initialize AI with API key from environment or user input
-  useEffect(() => {
-    // In production, you'd get this from Supabase secrets
-    // For development, we'll allow user input
-    const tryInitializeAI = (key: string) => {
-      try {
-        const ai = new GoogleGenAI({ apiKey: key });
-        setGenAI(ai);
-        setShowApiKeyInput(false);
-      } catch (error) {
-        console.error('Failed to initialize Gemini AI:', error);
-        setShowApiKeyInput(true);
-      }
-    };
-
-    // Check if we have an API key in environment (Supabase secret)
-    // For now, show the API key input - in production this would be automatic
-    if (!genAI) {
-      setShowApiKeyInput(true);
-    }
-  }, [genAI]);
 
   useEffect(() => {
     scrollToBottom();
@@ -77,19 +52,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleApiKeySubmit = () => {
-    if (userApiKey.trim()) {
-      try {
-        const ai = new GoogleGenAI({ apiKey: userApiKey.trim() });
-        setGenAI(ai);
-      } catch (error) {
-        console.error('Failed to initialize Gemini AI:', error);
-      }
-    }
-  };
-
   const sendMessage = async () => {
-    if (!inputValue.trim() || !genAI) return;
+    if (!inputValue.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -108,24 +72,26 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       const contextString = generateContextString();
       const systemPrompt = createSystemPrompt(contextString, cafeInfo.name);
       
-      const response = await genAI.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\nUser: ${userMessage.text}` }]
-          }
-        ],
-        config: {
-          thinkingConfig: {
-            thinkingBudget: 0
-          }
+      // Call our secure edge function instead of directly using Gemini API
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: {
+          message: userMessage.text,
+          systemPrompt: systemPrompt
         }
       });
 
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to get AI response');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'AI service error');
+      }
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.text || "I'm sorry, I'm having trouble responding right now. Please try again!",
+        text: data.response || "I'm sorry, I'm having trouble responding right now. Please try again!",
         isUser: false,
         timestamp: new Date()
       };
@@ -157,9 +123,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
     setMessages([]);
   };
 
-  // Initial welcome message
+  // Initial welcome message when chat opens
   useEffect(() => {
-    if (isOpen && messages.length === 0 && genAI) {
+    if (isOpen && messages.length === 0) {
       const welcomeMessage: Message = {
         id: 'welcome',
         text: `Hello! Welcome to ${cafeInfo.name}! 🐱☕ I'm here to help you with our menu, introduce you to our adorable cats, answer questions about adoption, or share our café hours. What would you like to know?`,
@@ -168,7 +134,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       };
       setMessages([welcomeMessage]);
     }
-  }, [isOpen, genAI, cafeInfo.name, messages.length]);
+  }, [isOpen, cafeInfo.name, messages.length]);
 
   if (!isOpen) {
     return (
@@ -200,34 +166,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
           <X className="h-4 w-4" />
         </button>
       </div>
-
-      {/* API Key Input (if needed) */}
-      {showApiKeyInput && (
-        <div className="p-4 bg-accent/50 border-b border-border">
-          <div className="flex items-center space-x-2 mb-2">
-            <Key className="h-4 w-4 text-primary" />
-            <p className="text-sm text-foreground/80">API key required to start chatting</p>
-          </div>
-          <p className="text-xs text-foreground/60 mb-3">
-            💡 <strong>For café owners:</strong> In production, store your Gemini API key securely in Supabase secrets to avoid showing this prompt to customers.
-          </p>
-          <div className="flex space-x-2">
-            <input
-              type="password"
-              value={userApiKey}
-              onChange={(e) => setUserApiKey(e.target.value)}
-              placeholder="Your Gemini API key..."
-              className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              onClick={handleApiKeySubmit}
-              className="px-3 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Start
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -275,37 +213,35 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       </div>
 
       {/* Input */}
-      {genAI && (
-        <div className="p-4 border-t border-border">
-          <div className="flex space-x-2">
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about our cats, menu, or hours..."
-              className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={1}
-              disabled={isLoading}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={isLoading || !inputValue.trim()}
-              className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-          
-          {messages.length > 1 && (
-            <button
-              onClick={resetChat}
-              className="text-xs text-foreground/60 hover:text-foreground mt-2 transition-colors"
-            >
-              Start new conversation
-            </button>
-          )}
+      <div className="p-4 border-t border-border">
+        <div className="flex space-x-2">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask about our cats, menu, or hours..."
+            className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            rows={1}
+            disabled={isLoading}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={isLoading || !inputValue.trim()}
+            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="h-4 w-4" />
+          </button>
         </div>
-      )}
+        
+        {messages.length > 1 && (
+          <button
+            onClick={resetChat}
+            className="text-xs text-foreground/60 hover:text-foreground mt-2 transition-colors"
+          >
+            Start new conversation
+          </button>
+        )}
+      </div>
     </div>
   );
 };
