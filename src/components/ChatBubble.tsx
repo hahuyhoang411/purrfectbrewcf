@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Bot } from 'lucide-react';
 import { useCafeContext } from '../hooks/useCafeContext';
+import { useChatSession } from '../hooks/useChatSession';
 import { supabase } from '../integrations/supabase/client';
 
 interface Message {
@@ -37,6 +38,10 @@ Remember: Be helpful about our café, menu, cats, and services. For anything els
 const ChatBubble: React.FC<ChatBubbleProps> = () => {
   // Get dynamic café context from our centralized data
   const { cafeInfo, generateContextString } = useCafeContext();
+  
+  // Get session management for anonymous users
+  const { sessionId, saveMessage, loadChatHistory, isLoading: sessionLoading } = useChatSession();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -97,6 +102,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       };
 
       setMessages(prev => [...prev, aiResponse]);
+      
+      // Save both messages to database
+      await saveMessage(userMessage.text, true, aiResponse.text);
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
@@ -123,18 +131,50 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
     setMessages([]);
   };
 
-  // Initial welcome message when chat opens
+  // Load chat history when session is ready and chat opens
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: 'welcome',
-        text: `Hello! Welcome to ${cafeInfo.name}! 🐱☕ I'm here to help you with our menu, introduce you to our adorable cats, answer questions about adoption, or share our café hours. What would you like to know?`,
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [isOpen, cafeInfo.name, messages.length]);
+    const loadHistory = async () => {
+      if (isOpen && sessionId && !sessionLoading) {
+        try {
+          const history = await loadChatHistory();
+          
+          if (history && history.length > 0) {
+            // Convert database messages to UI messages
+            const uiMessages: Message[] = history.map(msg => ({
+              id: msg.id,
+              text: msg.message,
+              isUser: msg.is_user,
+              timestamp: new Date(msg.created_at)
+            }));
+            
+            setMessages(uiMessages);
+            console.log(`📚 Loaded ${uiMessages.length} messages from chat history`);
+          } else {
+            // No history, show welcome message
+            const welcomeMessage: Message = {
+              id: 'welcome',
+              text: `Hello! Welcome to ${cafeInfo.name}! 🐱☕ I'm here to help you with our menu, introduce you to our adorable cats, answer questions about adoption, or share our café hours. What would you like to know?`,
+              isUser: false,
+              timestamp: new Date()
+            };
+            setMessages([welcomeMessage]);
+          }
+        } catch (error) {
+          console.error('Error loading chat history:', error);
+          // Show welcome message as fallback
+          const welcomeMessage: Message = {
+            id: 'welcome',
+            text: `Hello! Welcome to ${cafeInfo.name}! 🐱☕ I'm here to help you with our menu, introduce you to our adorable cats, answer questions about adoption, or share our café hours. What would you like to know?`,
+            isUser: false,
+            timestamp: new Date()
+          };
+          setMessages([welcomeMessage]);
+        }
+      }
+    };
+
+    loadHistory();
+  }, [isOpen, sessionId, sessionLoading, loadChatHistory, cafeInfo.name]);
 
   if (!isOpen) {
     return (
