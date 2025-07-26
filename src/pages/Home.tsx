@@ -1,10 +1,13 @@
 
-import { ArrowRight, Clock, Heart, Users, Coffee, Cat } from 'lucide-react';
+import { ArrowRight, Clock, Heart, Users, Coffee, Cat, Star, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { CAFE_INFO } from '../data/cafeData';
+import { useAuth } from '@/hooks/useAuth';
 
 const Home = () => {
+  const { user } = useAuth();
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -83,6 +86,71 @@ const Home = () => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Loyalty Program Section */}
+      <section className="py-20 bg-gradient-to-r from-primary/10 to-accent/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="bg-primary text-primary-foreground p-3 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+              <Star className="h-8 w-8" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-serif">
+              Join Our Loyalty Program
+            </h2>
+            <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
+              Earn points with every visit and redeem amazing rewards. Free coffee, treats, and exclusive cat experiences await!
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-background rounded-xl p-6 text-center hover-lift">
+              <div className="bg-primary/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Coffee className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Earn Points</h3>
+              <p className="text-foreground/80">Get 5 points for every dollar spent</p>
+            </div>
+            
+            <div className="bg-background rounded-xl p-6 text-center hover-lift">
+              <div className="bg-primary/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Gift className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Redeem Rewards</h3>
+              <p className="text-foreground/80">Free drinks, pastries, and cat experiences</p>
+            </div>
+            
+            <div className="bg-background rounded-xl p-6 text-center hover-lift">
+              <div className="bg-primary/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Heart className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Support Cats</h3>
+              <p className="text-foreground/80">Your visits help support our rescue cats</p>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            {user ? (
+              <Link
+                to="/loyalty"
+                className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-lg font-semibold hover-lift inline-flex items-center space-x-2 group"
+              >
+                <Star className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                <span>View Your Rewards</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-primary text-primary-foreground px-8 py-4 rounded-full text-lg font-semibold hover-lift inline-flex items-center space-x-2 group"
+              >
+                <Star className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                <span>Join Now - It's Free!</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            )}
           </div>
         </div>
       </section>
