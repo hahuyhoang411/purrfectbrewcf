@@ -48,14 +48,26 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (shouldAutoScroll) {
+      scrollToBottom();
+    }
+  }, [messages, shouldAutoScroll]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleScroll = () => {
+    if (scrollAreaRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+      setShouldAutoScroll(isNearBottom);
+    }
   };
 
   const sendMessage = async () => {
@@ -70,6 +82,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setShouldAutoScroll(true); // Always auto-scroll for new messages
     setIsLoading(true);
     setIsTyping(true);
 
@@ -103,6 +116,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       };
 
       setMessages(prev => [...prev, aiResponse]);
+      setShouldAutoScroll(true); // Always auto-scroll for AI responses
       
       // Save both messages to database
       await saveMessage(userMessage.text, true, aiResponse.text);
@@ -130,12 +144,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
 
   const resetChat = () => {
     setMessages([]);
+    setShouldAutoScroll(true);
   };
 
   // Load chat history when session is ready and chat opens
   useEffect(() => {
     const loadHistory = async () => {
-      if (isOpen && sessionId && !sessionLoading) {
+      if (isOpen && sessionId && !sessionLoading && messages.length === 0) {
         try {
           const history = await loadChatHistory();
           
@@ -149,6 +164,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
             }));
             
             setMessages(uiMessages);
+            setShouldAutoScroll(false); // Don't auto-scroll when loading history
             console.log(`📚 Loaded ${uiMessages.length} messages from chat history`);
           } else {
             // No history, show welcome message
@@ -159,6 +175,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
               timestamp: new Date()
             };
             setMessages([welcomeMessage]);
+            setShouldAutoScroll(true);
           }
         } catch (error) {
           console.error('Error loading chat history:', error);
@@ -170,12 +187,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
             timestamp: new Date()
           };
           setMessages([welcomeMessage]);
+          setShouldAutoScroll(true);
         }
       }
     };
 
     loadHistory();
-  }, [isOpen, sessionId, sessionLoading, loadChatHistory, cafeInfo.name]);
+  }, [isOpen, sessionId, sessionLoading, cafeInfo.name]); // Removed loadChatHistory and added messages.length check
 
   if (!isOpen) {
     return (
@@ -209,7 +227,11 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
+      <ScrollArea 
+        className="flex-1" 
+        ref={scrollAreaRef}
+        onScrollCapture={handleScroll}
+      >
         <div className="p-4 space-y-4">
         {messages.map((message) => (
           <div
