@@ -3,6 +3,7 @@ import { MessageCircle, Send, X, Bot } from 'lucide-react';
 import { useCafeContext } from '../hooks/useCafeContext';
 import { useChatSession } from '../hooks/useChatSession';
 import { supabase } from '../integrations/supabase/client';
+import { ScrollArea } from './ui/scroll-area';
 
 interface Message {
   id: string;
@@ -208,7 +209,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -250,7 +252,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
         )}
         
         <div ref={messagesEndRef} />
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* Input */}
       <div className="p-4 border-t border-border">
