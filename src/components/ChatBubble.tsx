@@ -4,6 +4,8 @@ import { useCafeContext } from '../hooks/useCafeContext';
 import { useChatSession } from '../hooks/useChatSession';
 import { supabase } from '../integrations/supabase/client';
 import { ScrollArea } from './ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: string;
@@ -245,7 +247,29 @@ const ChatBubble: React.FC<ChatBubbleProps> = () => {
                   : 'bg-accent text-accent-foreground'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+              <div className="text-sm">
+                {message.isUser ? (
+                  <p className="whitespace-pre-wrap">{message.text}</p>
+                ) : (
+                  <div className="prose prose-sm max-w-none text-current [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ children }) => <code className="bg-background/20 px-1 py-0.5 rounded text-xs">{children}</code>,
+                        pre: ({ children }) => <pre className="bg-background/20 p-2 rounded my-2 text-xs overflow-x-auto">{children}</pre>
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
               <div
                 className={`text-xs mt-1 opacity-70 ${
                   message.isUser ? 'text-right' : 'text-left'
