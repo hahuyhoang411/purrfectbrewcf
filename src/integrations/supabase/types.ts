@@ -166,6 +166,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_limits: {
+        Row: {
+          activity_count: number
+          activity_type: string
+          created_at: string
+          id: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          activity_count?: number
+          activity_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          activity_count?: number
+          activity_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       user_reward_redemptions: {
         Row: {
           id: string
