@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -245,6 +245,10 @@ export type Database = {
       redeem_loyalty_points: {
         Args: { p_user_id: string; p_reward_id: string }
         Returns: boolean
+      }
+      sanitize_chat_input: {
+        Args: { input_text: string }
+        Returns: string
       }
     }
     Enums: {
